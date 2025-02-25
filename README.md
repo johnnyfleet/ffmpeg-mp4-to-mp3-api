@@ -1,7 +1,7 @@
 # FFmpeg API - Convert MP4 to MP3
 
-![GitHub Workflow Status](https://github.com/johnnyfleet/ffmpeg-mp4-to-mp3-api/actions/workflows/docker-build.yml/badge.svg)
-![GitHub Workflow Status](https://github.com/johnnyfleet/ffmpeg-mp4-to-mp3-api/actions/workflows/docker-rebuild-on-upstream.yml/badge.svg)
+[![Build and Push Docker Image](https://github.com/johnnyfleet/ffmpeg-mp4-to-mp3-api/actions/workflows/docker-build.yaml/badge.svg?branch=main)](https://github.com/johnnyfleet/ffmpeg-mp4-to-mp3-api/actions/workflows/docker-build.yaml)
+[![Rebuild Docker Image on Base Image Update](https://github.com/johnnyfleet/ffmpeg-mp4-to-mp3-api/actions/workflows/docker-rebuild-on-upstream.yaml/badge.svg)](https://github.com/johnnyfleet/ffmpeg-mp4-to-mp3-api/actions/workflows/docker-rebuild-on-upstream.yaml)
 
 A FastAPI-based microservice that converts **MP4 video files to MP3 audio files** using **FFmpeg**.
 Automatically cleans up files and is designed for **Docker deployment** with **GitHub Actions CI/CD**.
