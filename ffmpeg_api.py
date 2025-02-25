@@ -9,7 +9,7 @@ import threading
 app = FastAPI(
     title="FFmpeg MP4 to MP3 API",
     description="API to convert MP4 to MP3 using FFmpeg with auto cleanup.",
-    version="1.1.1",
+    version="1.1.2",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json"
