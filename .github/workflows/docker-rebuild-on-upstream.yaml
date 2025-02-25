@@ -1,0 +1,63 @@
+name: Rebuild Docker Image on Base Image Update
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # Runs daily at midnight UTC
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  check-upstream-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
+      - name: Check for Upstream Base Image Update
+        id: check_update
+        run: |
+          UPSTREAM_IMAGE="python:3.10-alpine"
+          LOCAL_IMAGE="ghcr.io/${{ github.repository_owner }}/ffmpeg-api:latest"
+
+          # Get the latest upstream digest
+          UPSTREAM_DIGEST=$(docker pull $UPSTREAM_IMAGE > /dev/null 2>&1 && docker inspect --format='{{index .RepoDigests 0}}' $UPSTREAM_IMAGE | cut -d'@' -f2)
+
+          # Get the latest local image digest from GHCR
+          LOCAL_DIGEST=$(docker pull $LOCAL_IMAGE > /dev/null 2>&1 && docker inspect --format='{{index .RepoDigests 0}}' $LOCAL_IMAGE | cut -d'@' -f2 || echo "not_found")
+
+          echo "Upstream Digest: $UPSTREAM_DIGEST"
+          echo "Local Digest: $LOCAL_DIGEST"
+
+          # Check if the base image digest has changed
+          if [ "$UPSTREAM_DIGEST" != "$LOCAL_DIGEST" ]; then
+            echo "Base image has been updated. Rebuilding..."
+            echo "BUILD_NEEDED=true" >> $GITHUB_ENV
+          else
+            echo "No update detected."
+            echo "BUILD_NEEDED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Build and Push Docker Image
+        if: env.BUILD_NEEDED == 'true'
+        run: |
+          IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/ffmpeg-api:latest"
+          docker build -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+
+      - name: Commit and Push if Updated
+        if: env.BUILD_NEEDED == 'true'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          echo "Updating Dockerfile base image reference" > update-log.txt
+          git add update-log.txt
+
+          git commit -m "Rebuilt due to base image update: python:3.10-alpine"
+          git push
