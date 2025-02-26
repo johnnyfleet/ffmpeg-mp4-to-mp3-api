@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks, Request
 from fastapi.responses import FileResponse
 import subprocess
 import os
@@ -25,7 +25,7 @@ def delete_file_after_delay(file_path: str, delay: int = 600):  # Default: 10 mi
         print(f"Deleted file: {file_path}")
 
 @app.post("/convert", summary="Convert MP4 to MP3", tags=["Conversion"])
-async def convert_mp4_to_mp3(file: UploadFile = File(...)):
+async def convert_mp4_to_mp3(request: Request, file: UploadFile = File(...)):
     """
     Upload an MP4 file and convert it to MP3 using FFmpeg.
     The original MP4 file is deleted after conversion.
@@ -60,7 +60,7 @@ async def convert_mp4_to_mp3(file: UploadFile = File(...)):
 @app.get("/download/{filename}", summary="Download converted MP3", tags=["Download"])
 async def download_file(filename: str, background_tasks: BackgroundTasks):
     """
-    Download the converted MP3 file. The file is deleted after 10 minutes.
+    Download the converted MP3 file. The file is deleted after 24 hours.
     """
     file_path = f"{UPLOAD_FOLDER}/{filename}"
 
