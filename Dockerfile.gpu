@@ -1,0 +1,36 @@
+# Use NVIDIA CUDA base image with Python
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+
+# Set default PUID and PGID for Unraid compatibility
+ARG PUID=99
+ARG PGID=100
+
+# Install required dependencies and NVIDIA FFmpeg
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    python3 python3-pip \
+    && if ! getent group $PGID; then groupadd -g $PGID appgroup; fi \
+    && if ! id -u $PUID > /dev/null 2>&1; then useradd -m -u $PUID -g $PGID appuser; fi \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy dependencies first to optimize Docker caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application files
+COPY . .
+
+# Set correct ownership of files to the non-root user
+RUN chown -R $PUID:$PGID /app
+
+# Switch to the non-root user
+USER $PUID
+
+# Expose the API port
+EXPOSE 8000
+
+# Start the FastAPI app using Uvicorn
+CMD ["uvicorn", "ffmpeg_api:app", "--host", "0.0.0.0", "--port", "8000"]
