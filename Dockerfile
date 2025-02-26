@@ -1,5 +1,5 @@
 # Use a minimal Python + Alpine base image
-FROM python:3.10-alpine
+FROM python:3-alpine
 
 # Set default PUID and PGID for Unraid (can be overridden)
 ARG PUID=99

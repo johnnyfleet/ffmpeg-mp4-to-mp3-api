@@ -29,7 +29,7 @@ jobs:
       - name: Check for Upstream Base Image Update
         id: check_update
         run: |
-          UPSTREAM_IMAGE="python:3.10-alpine"
+          UPSTREAM_IMAGE="python:3-alpine"
           LOCAL_IMAGE="ghcr.io/${{ github.repository_owner }}/ffmpeg-mp4-to-mp3-api:latest"
 
           # Get the latest upstream digest
