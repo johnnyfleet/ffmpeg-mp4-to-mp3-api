@@ -49,7 +49,8 @@ async def convert_mp4_to_mp3(file: UploadFile = File(...)):
 
     # Check if conversion was successful
     if result.returncode == 0 and os.path.exists(mp3_path):
-        return {"mp3_url": f"http://localhost:8000/download/{file_id}.mp3"}
+        base_url = str(request.base_url).rstrip("/")
+        return {"mp3_url": f"{base_url}/download/{file_id}.mp3"}
     else:
         # Ensure MP3 is not left behind if conversion fails
         if os.path.exists(mp3_path):
@@ -59,7 +60,7 @@ async def convert_mp4_to_mp3(file: UploadFile = File(...)):
 @app.get("/download/{filename}", summary="Download converted MP3", tags=["Download"])
 async def download_file(filename: str, background_tasks: BackgroundTasks):
     """
-    Download the converted MP3 file. The file is deleted after 24 hours.
+    Download the converted MP3 file. The file is deleted after 10 minutes.
     """
     file_path = f"{UPLOAD_FOLDER}/{filename}"
 
