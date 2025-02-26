@@ -1,0 +1,29 @@
+<Container>
+  <Name>FFmpeg MP4 to MP3 API</Name>
+  <Repository>ghcr.io/johnnyfleet/ffmpeg-mp4-to-mp3-api:latest</Repository>
+  <Network>bridge</Network>
+  <MyIP></MyIP>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/johnnyfleet/ffmpeg-mp4-to-mp3-api/issues</Support>
+  <Project>https://github.com/johnnyfleet/ffmpeg-mp4-to-mp3-api</Project>
+  <Overview>A FastAPI-based FFmpeg server to convert MP4 to MP3 with optional NVIDIA GPU acceleration.</Overview>
+  <Category>Media</Category>
+  <WebUI>http://[IP]:[PORT:8000]</WebUI>
+  <ExtraParams>--gpus=all --runtime=nvidia</ExtraParams>
+
+  <!-- Configurable Volume Mapping -->
+  <Config Name="Config" Target="/data" Default="/mnt/cache_app/appdata/ffmpeg-api" Mode="rw" Description="Location to store converted MP3 files" Type="Path" Display="always" Required="true" Mask="false"/>
+
+  <!-- Configurable Port Mapping -->
+  <Config Name="Port" Target="8000" Default="8000" Mode="tcp" Description="Port to access the FFmpeg API" Type="Port" Display="always" Required="true" Mask="false" />
+  <!-- Environment Variables -->
+  <Config Name="User ID" Target="PUID" Default="99" Mode="rw" Description="User ID for Unraid compatibility" Type="Variable" Display="always" Required="true" Mask="false"/>
+  <Config Name="Group ID" Target="PGID" Default="100" Mode="rw" Description="Group ID for Unraid compatibility" Type="Variable" Display="always" Required="true" Mask="false"/>
+  <Config Name="Timezone" Target="TZ" Default="Pacific/Auckland" Mode="rw" Description="Set the container timezone" Type="Variable" Display="always" Required="true" Mask="false"/>
+
+  <!-- NVIDIA GPU Support -->
+  <Config Name="NVIDIA_DRIVER_CAPABILITIES" Target="NVIDIA_DRIVER_CAPABILITIES" Default="all" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false">all</Config>
+  <Config Name="NVIDIA_VISIBLE_DEVICES" Target="NVIDIA_VISIBLE_DEVICES" Default="all" Mode="rw" Description="Set to GPU UUID or 'all' to enable NVIDIA GPU acceleration" Type="Variable" Display="always" Required="false" Mask="false">all</Config>
+
+</Container>
