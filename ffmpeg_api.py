@@ -1,34 +1,29 @@
-from fastapi import FastAPI, File, UploadFile, BackgroundTasks
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, UploadFile
 import subprocess
 import os
 import uuid
-import time
-import threading
 
 app = FastAPI(
-    title="FFmpeg MP4 to MP3 API",
-    description="API to convert MP4 to MP3 using FFmpeg with auto cleanup.",
-    version="1.1.2",
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    title="FFmpeg API",
+    description="A FastAPI-based service to convert MP4 to MP3 using FFmpeg with GPU acceleration if available.",
+    version="1.1.1",
 )
 
 UPLOAD_FOLDER = "/data"
 
-def delete_file_after_delay(file_path: str, delay: int = 600):  # Default: 24 hours (86400s)
-    """Deletes a file after a given delay (default: 24 hours)."""
-    time.sleep(delay)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        print(f"Deleted file: {file_path}")
+def is_nvidia_available():
+    """Check if an NVIDIA GPU is available using nvidia-smi."""
+    try:
+        result = subprocess.run(["nvidia-smi"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return result.returncode == 0  # Returns True if GPU is found, False otherwise
+    except FileNotFoundError:
+        return False  # nvidia-smi command not found, so no GPU is available
 
-@app.post("/convert", summary="Convert MP4 to MP3", tags=["Conversion"])
+@app.post("/convert", summary="Convert MP4 to MP3")
 async def convert_mp4_to_mp3(file: UploadFile = File(...)):
     """
     Upload an MP4 file and convert it to MP3 using FFmpeg.
-    The original MP4 file is deleted after conversion.
+    Automatically uses NVIDIA GPU if available, otherwise falls back to CPU.
     """
     file_id = str(uuid.uuid4())
     mp4_path = f"{UPLOAD_FOLDER}/{file_id}.mp4"
@@ -38,35 +33,44 @@ async def convert_mp4_to_mp3(file: UploadFile = File(...)):
     with open(mp4_path, "wb") as buffer:
         buffer.write(await file.read())
 
-    # Run FFmpeg conversion
-    command = ["ffmpeg", "-i", mp4_path, "-q:a", "0", "-map", "a", mp3_path]
+    # Determine if GPU is available
+    use_gpu = is_nvidia_available()
+
+    # Define FFmpeg command
+    if use_gpu:
+        print("✅ NVIDIA GPU detected! Using hardware acceleration.")
+        command = [
+            "ffmpeg",
+            "-hwaccel", "cuda",  # Enable CUDA acceleration
+            "-i", mp4_path,
+            "-c:a", "aac",  # Use GPU-accelerated audio encoding
+            "-b:a", "192k",
+            "-map", "a",
+            mp3_path
+        ]
+    else:
+        print("⚠ No NVIDIA GPU detected. Using CPU for conversion.")
+        command = [
+            "ffmpeg",
+            "-i", mp4_path,
+            "-q:a", "0",
+            "-map", "a",
+            mp3_path
+        ]
+
+    # Run FFmpeg
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    # Delete the original MP4 file (cleanup)
+    # Cleanup MP4 file
     if os.path.exists(mp4_path):
         os.remove(mp4_path)
-        print(f"Deleted MP4: {mp4_path}")
+        print(f"🗑 Deleted MP4 file: {mp4_path}")
 
     # Check if conversion was successful
     if result.returncode == 0 and os.path.exists(mp3_path):
         return {"mp3_url": f"http://localhost:8000/download/{file_id}.mp3"}
     else:
-        # Ensure MP3 is not left behind if conversion fails
+        # Cleanup MP3 file if conversion failed
         if os.path.exists(mp3_path):
             os.remove(mp3_path)
         return {"error": "Conversion failed"}
-
-@app.get("/download/{filename}", summary="Download converted MP3", tags=["Download"])
-async def download_file(filename: str, background_tasks: BackgroundTasks):
-    """
-    Download the converted MP3 file. The file is deleted after 24 hours.
-    """
-    file_path = f"{UPLOAD_FOLDER}/{filename}"
-
-    if not os.path.exists(file_path):
-        return {"error": "File not found"}
-
-    # Schedule file deletion after 24 hours
-    background_tasks.add_task(delete_file_after_delay, file_path)
-
-    return FileResponse(file_path, media_type="audio/mpeg", filename=filename)
