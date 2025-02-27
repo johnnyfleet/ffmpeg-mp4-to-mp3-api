@@ -62,7 +62,10 @@ async def download_file(filename: str, background_tasks: BackgroundTasks):
     """
     Download the converted MP3 file. The file is deleted after 24 hours.
     """
-    file_path = f"{UPLOAD_FOLDER}/{filename}"
+    file_path = os.path.normpath(os.path.join(UPLOAD_FOLDER, filename))
+
+    if not file_path.startswith(UPLOAD_FOLDER):
+        return {"error": "Invalid file path"}
 
     if not os.path.exists(file_path):
         return {"error": "File not found"}
