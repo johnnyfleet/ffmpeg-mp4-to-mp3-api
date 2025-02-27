@@ -17,7 +17,7 @@ app = FastAPI(
 
 UPLOAD_FOLDER = "/data"
 
-def delete_file_after_delay(file_path: str, delay: int = 600):  # Default: 10 mins24 (600s)
+def delete_file_after_delay(file_path: str, delay: int = 600):  # Default: 10 mins (600s)
     """Deletes a file after a given delay (default: 10 minutes)."""
     time.sleep(delay)
     if os.path.exists(file_path):
